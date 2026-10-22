@@ -352,6 +352,7 @@ textarea{font:inherit;width:100%;padding:6px 8px;border:1px solid var(--line);bo
       <div class="tools">
         <button class="tool" data-tool="form" aria-pressed="false"><svg viewBox="0 0 28 28"><circle class="ico-p" cx="9" cy="8" r="4"/><path d="M8 12c-3 5-1 11 6 12 4 .5 7-2 8-5" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/></svg><span>Beinform</span></button>
         <button class="tool" data-tool="sketchLeg" aria-pressed="false"><svg viewBox="0 0 28 28"><path class="ico-s" d="M4 22c4-10 9-14 18-15"/><circle class="ico-a" cx="4" cy="22" r="2"/><circle class="ico-a" cx="13" cy="11" r="2"/><path class="ico-s" d="M8 15l10-8" stroke-dasharray="2 2"/><circle class="ico-a" cx="22" cy="7" r="2"/></svg><span>Bein skizzieren</span></button>
+        <button class="tool" data-tool="spring" aria-pressed="false"><svg viewBox="0 0 28 28"><path d="M14 3v4l-6 2 12 3-12 3 12 3-6 2v5" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg><span>Feder</span></button>
       </div>
       <div class="glabel">Bein</div>
     </div>
@@ -558,6 +559,26 @@ textarea{font:inherit;width:100%;padding:6px 8px;border:1px solid var(--line);bo
             <p class="note">Das Reifenprofil stellst du unter „Reifenprofil“ ein.</p>
           </div>
         </div>
+        <!-- Feder -->
+        <div data-panel="spring" hidden>
+          <div class="sec"><label class="toggle" style="margin-top:0"><input type="checkbox" id="spOn"> Feder ins Bein einbauen</label></div>
+          <div id="spBody">
+            <div class="sec"><h3>Federart</h3><div class="chips" id="spTypes"></div><p class="note" id="spDesc"></p></div>
+            <div class="sec">
+              <div class="row"><label for="spPos">Lage im Bein</label><output id="spPosOut"></output><input type="range" id="spPos" min="15" max="85" step="1"></div>
+              <div class="row"><label for="spLen">Länge der Feder</label><output id="spLenOut"></output><input type="range" id="spLen" min="10" max="60" step="1"></div>
+              <div class="row" id="rowSpN"><label for="spN">Windungen</label><output id="spNOut"></output><input type="range" id="spN" min="1" max="8" step="1"></div>
+              <div class="row"><label for="spAmp" id="spAmpLbl">Ausschlag</label><output id="spAmpOut"></output><input type="range" id="spAmp" min="1" max="14" step="0.5"></div>
+              <div class="row"><label for="spTb">Stegdicke</label><output id="spTbOut"></output><input type="range" id="spTb" min="0.6" max="3" step="0.1"></div>
+            </div>
+            <div class="sec"><h3>Berechnung</h3>
+              <div class="chips" id="spMats"></div>
+              <div class="row"><label for="spMass">Gewicht des Roboters</label><output id="spMassOut"></output><input type="range" id="spMass" min="50" max="800" step="10"></div>
+              <div class="simgrid" id="spStats" style="margin-top:10px"></div>
+              <p class="note" id="spNote"></p>
+            </div>
+          </div>
+        </div>
         <!-- Grip -->
         <div data-panel="grip" hidden>
           <div class="sec"><label class="toggle" style="margin-top:0"><input type="checkbox" id="grip"> <span id="gripOnLbl">Grip-Rippen an den Beinen</span></label></div>
@@ -744,10 +765,20 @@ textarea{font:inherit;width:100%;padding:6px 8px;border:1px solid var(--line);bo
     </section>
 
     <section class="float walk" id="walk" hidden aria-labelledby="walkTitle">
-      <div class="ph"><span class="grow" id="walkTitle">Probelauf</span><button class="icon-x" id="walkClose" aria-label="Probelauf beenden"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.6"/></svg></button></div>
+      <div class="ph"><span class="grow" id="walkTitle">Simulation</span><button class="icon-x" id="walkClose" aria-label="Probelauf beenden"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.6"/></svg></button></div>
       <div class="wb">
-        <canvas id="walkGraph"></canvas>
-        <div class="wrow"><button class="btn" id="walkPlay">Anhalten</button><button class="btn" id="walkSlow">Zeitlupe</button><button class="btn" id="walkReset">Neustart</button></div>
+        <div class="simgrid" id="walkStats"></div>
+        <canvas id="walkGraph" style="margin-top:8px"></canvas>
+        <div class="row"><label for="walkRpm">Drehzahl Motor</label><output id="walkRpmOut"></output><input type="range" id="walkRpm" min="40" max="300" step="5"></div>
+        <div class="row"><label for="walkSpd">Animation</label><output id="walkSpdOut"></output><input type="range" id="walkSpd" min="0" max="100" step="1"></div>
+        <div class="transport" role="toolbar" aria-label="Wiedergabe Probelauf">
+          <button class="tbtn" id="walkReset" title="Zum Anfang" aria-label="Zum Anfang"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14L9 12z" fill="currentColor"/></svg></button>
+          <button class="tbtn" id="walkBack" title="Schritt zurück" aria-label="Schritt zurück"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M11 6v12L3 12zM21 6v12l-8-6z" fill="currentColor"/></svg></button>
+          <button class="tbtn main" id="walkPlay" title="Abspielen / Pause" aria-label="Abspielen oder Pause"></button>
+          <button class="tbtn" id="walkStep" title="Schritt vor" aria-label="Schritt vor"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M13 6v12l8-6zM3 6v12l8-6z" fill="currentColor"/></svg></button>
+          <span class="tpos" id="walkPos">0°</span>
+        </div>
+        <p class="note" id="walkVerdict"></p>
       </div>
     </section>
 
@@ -975,12 +1006,68 @@ var LegGeom = (function () {
   }
 
   function tooth(p) { p.tooth = true; return p; }
+  // ---------- Federn im Bein ----------
+  var SPRING_DEF = { on: false, type: 'zickzack', pos: 45, len: 30, n: 3, amp: 5, tb: 1.2, mat: 'pla', mass: 250 };
+  var SPRING_MAT = { pla: { name: 'PLA', E: 2300, zul: 20 }, petg: { name: 'PETG', E: 1900, zul: 22 }, tpu: { name: 'TPU 95A', E: 26, zul: 8 } };
+  function springCfg(P) { var c = {}, k, src = P && P.spring || {}; for (k in SPRING_DEF) c[k] = (src[k] === undefined ? SPRING_DEF[k] : src[k]); return c; }
+  // Federweg in lokalen Koordinaten (x entlang der Sehne von 0 bis Lc, y quer); liefert Polylinien
+  function springLocal(sp, Lc) {
+    var A = sp.amp, n = Math.max(1, Math.round(sp.n)), out = [], i, t;
+    if (sp.type === 'maeander') {
+      var m = 2 * n, pitch = Lc / (m + 1), pl = [[0, 0]], up = true;
+      for (i = 0; i < m; i++) { var x = pitch * (i + 1), y0 = up ? -A : A, y1 = up ? A : -A;
+        if (i === 0) pl.push([x, 0]); pl.push([x, y0 * (i === 0 ? 0 : 1)]); pl.push([x, y1]); if (i < m - 1) pl.push([x + pitch, y1]); up = !up; }
+      pl.push([pitch * m, 0]); pl.push([Lc, 0]);
+      var cl = [pl[0]]; pl.forEach(function (q) { var l = cl[cl.length - 1]; if (Math.hypot(q[0] - l[0], q[1] - l[1]) > 1e-6) cl.push(q); }); out.push(cl);
+    } else if (sp.type === 'bogen' || sp.type === 'doppel') {
+      [1, -1].forEach(function (sg, k) { if (k && sp.type === 'bogen') return; var pl2 = []; for (i = 0; i <= 24; i++) { t = i / 24; pl2.push([Lc * t, sg * A * Math.sin(Math.PI * t)]); } out.push(pl2); });
+    } else if (sp.type === 'ring') {
+      var R = Math.min(A, Lc / 2 - 1), c = Lc / 2, ring = [];
+      for (i = 0; i <= 48; i++) { t = 2 * Math.PI * i / 48; ring.push([c + R * Math.cos(t), R * Math.sin(t)]); }
+      out.push([[0, 0], [c - R, 0]]); out.push([[c + R, 0], [Lc, 0]]); out.push(ring);
+    } else {
+      var pz = [[0, 0]]; for (i = 1; i < 2 * n; i++) pz.push([Lc * i / (2 * n), (i % 2 ? 1 : -1) * A]); pz.push([Lc, 0]); out.push(pz);
+    }
+    return out;
+  }
+  // Federrate und Spannung (Energiemethode, Biegung um die Hochachse; Last entlang der Federsehne)
+  function springStats(P, Lc) {
+    var sp = springCfg(P), M = SPRING_MAT[sp.mat] || SPRING_MAT.pla, b = Math.min(P.legH, Math.max(4, sockCfg(P).hubH)), h = Math.max(0.3, sp.tb);
+    var I = b * h * h * h / 12, Aq = b * h, paths = springLocal(sp, Lc), C = 0, ymax = 0;
+    if (sp.type === 'ring') { var R = Math.min(sp.amp, Lc / 2 - 1); C = 0.149 * R * R * R / (M.E * I) + (Lc - 2 * R) / (M.E * b * P.width); ymax = 0.318 * R; }
+    else {
+      paths.forEach(function (pl) { var c = 0; for (var i = 0; i < pl.length - 1; i++) { var a = pl[i], q = pl[i + 1], ds = Math.hypot(q[0] - a[0], q[1] - a[1]), ym = (a[1] + q[1]) / 2, cs = (q[0] - a[0]) / (ds || 1);
+        c += (ym * ym + (a[1] * a[1] + q[1] * q[1] - 2 * ym * ym) / 3) * ds / (M.E * I) + cs * cs * ds / (M.E * Aq); ymax = Math.max(ymax, Math.abs(a[1]), Math.abs(q[1])); } C = sp.type === 'doppel' ? (C ? 1 / (1 / C + 1 / c) : c) : C + c; });
+    }
+    var k = 1 / C, F = sp.mass / 1000 * 9.81 / 2, sig = 2 * F * ymax * (h / 2) / I;
+    var gap = sp.type === 'maeander' ? Lc / (2 * Math.max(1, Math.round(sp.n)) + 1) - h : null;
+    return { k: k, F: F, defl: F / k, dyn: 2 * F / k, sigma: sig, zul: M.zul, safety: M.zul / Math.max(sig, 1e-6), mat: M.name, gap: gap, Lc: Lc };
+  }
   function legShapes(P, lenFactor) {
     var L = P.length * lenFactor, cl = centerline(P, L), pts = cl.pts, shapes = [];
     var cum = [0]; for (var i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
     var tot = cum[cum.length - 1] || 1;
     function w(i) { var ww = P.width * (1 + (P.taper - 1) * cum[i] / tot); if (cl.thin && cl.thin(pts[i])) ww *= 0.72; return ww; }
-    if (P.taper === 1 && !cl.thin) shapes.push({ open: resample(pts, 0.9), r: P.width / 2 });
+    var SP = springCfg(P), s0 = -1, s1 = -1;
+    if (SP.on && P.part !== 'rad' && P.part !== 'fan') {
+      var half = SP.len / 100 * tot / 2, mid = SP.pos / 100 * tot;
+      s0 = Math.max(P.hubR + 1.5, mid - half); s1 = Math.min(tot - 3, mid + half);
+      if (s1 - s0 < 6) { s0 = -1; s1 = -1; }
+    }
+    function at(sv) { for (var q = 1; q < pts.length; q++) if (cum[q] >= sv) { var f = (sv - cum[q - 1]) / ((cum[q] - cum[q - 1]) || 1); return [pts[q - 1][0] + (pts[q][0] - pts[q - 1][0]) * f, pts[q - 1][1] + (pts[q][1] - pts[q - 1][1]) * f]; } return pts[pts.length - 1].slice(); }
+    if (s0 >= 0) {
+      var Pa = at(s0), Pb = at(s1), Lc = Math.hypot(Pb[0] - Pa[0], Pb[1] - Pa[1]), ux = (Pb[0] - Pa[0]) / Lc, uy = (Pb[1] - Pa[1]) / Lc;
+      for (i = 0; i < pts.length - 1; i++) { if (cum[i + 1] <= s0 || cum[i] >= s1) shapes.push(capsule(pts[i], pts[i + 1], w(i) / 2, w(i + 1) / 2)); }
+      var ia = 0; while (ia < pts.length - 1 && cum[ia + 1] < s0) ia++; shapes.push(capsule(pts[ia], Pa, w(ia) / 2, w(ia) / 2));
+      var ib = pts.length - 1; while (ib > 0 && cum[ib - 1] > s1) ib--; shapes.push(capsule(Pb, pts[ib], w(ib) / 2, w(ib) / 2));
+      springLocal(SP, Lc).forEach(function (pl) {
+        var wpl = pl.map(function (q) { return [Pa[0] + ux * q[0] - uy * q[1], Pa[1] + uy * q[0] + ux * q[1]]; });
+        for (var k = 0; k < wpl.length - 1; k++) shapes.push(capsule(wpl[k], wpl[k + 1], SP.tb / 2, SP.tb / 2));
+      });
+      shapes.push(circle(Pa[0], Pa[1], Math.max(SP.tb, w(ia) / 2), 20), circle(Pb[0], Pb[1], Math.max(SP.tb, w(ib) / 2), 20));
+      shapes.springInfo = { Lc: Lc };
+    }
+    else if (P.taper === 1 && !cl.thin) shapes.push({ open: resample(pts, 0.9), r: P.width / 2 });
     else for (i = 0; i < pts.length - 1; i++) shapes.push(capsule(pts[i], pts[i + 1], w(i) / 2, w(i + 1) / 2));
     // Grip-Rippen
     if (P.grip) {
@@ -993,6 +1080,7 @@ var LegGeom = (function () {
       var next = P.hubR + 1.5;
       for (i = 1; i < pts.length; i++) {
         if (cum[i] < next) continue;
+        if (s0 >= 0 && cum[i] > s0 - 2 && cum[i] < s1 + 2) continue;
         if (tot - cum[i] < Math.max(1.5, gl / 2 + 0.5)) break;
         next = cum[i] + pitch;
         var tg = norm([pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]]), nn = [-tg[1], tg[0]];
@@ -1766,8 +1854,14 @@ var LegGeom = (function () {
     var wallMin = P.hubR - 0.4 - (sockMax(SCx) + Math.max(0, SCx.chamfer));
     if (wallMin < 1.0) res.warnings.push('Die Nabe ist für diese Motoraufnahme zu dünn. Vergrößere den Nabendurchmesser.');
     var rmax = 0; A.outer.forEach(function (p) { rmax = Math.max(rmax, Math.hypot(p[0], p[1])); });
-    res.reach = P.part === 'fan' ? fanCfg(P).d / 2 : rmax; res.A = A; res.outerPath = A.outer;
-    var oBody = P.grip ? outline(Object.assign({}, P, { grip: false })) : o;   // Rippen-Spitzen nicht als dünne Stelle werten
+    res.reach = P.part === 'fan' ? fanCfg(P).d / 2 : rmax;
+    if (P.part !== 'rad' && P.part !== 'fan' && springCfg(P).on) { var ls0 = legShapes(P, 1); if (ls0.springInfo) res.spring = springStats(P, ls0.springInfo.Lc); }
+    if (res.spring) { var spc = springCfg(P);
+      if (spc.tb < 0.8) res.warnings.push('Die Federstege sind dünner als 0,8 mm und werden beim Druck unsauber.');
+      if (res.spring.gap != null && res.spring.gap < 0.6) res.warnings.push('Die Mäanderfeder ist zu eng: Die Stege berühren sich. Weniger Windungen oder dünnere Stege wählen.');
+      if (res.spring.safety < 1) res.warnings.push('Die Feder wird beim Laufen überlastet und kann brechen. Dicker, kürzer oder steifer machen.'); } res.A = A; res.outerPath = A.outer;
+    var spOn = P.part !== 'rad' && P.part !== 'fan' && springCfg(P).on;
+    var oBody = (P.grip || spOn) ? outline(Object.assign({}, P, { grip: false, spring: Object.assign({}, P.spring || {}, { on: false }) })) : o;   // Rippen-Spitzen nicht als dünne Stelle werten
     var th = oBody.main ? thinRatio(oBody.main) : 0; res.thin = th;
     // Räder rollen auf der Felgenform; das Reifenprofil zählt nur als gleichmäßige Höhe (damit ein rundes Rad auch rund rollt)
     if (P.part === 'rad') {   // runde Räder rollen exakt rund
@@ -1845,7 +1939,7 @@ var LegGeom = (function () {
     }
     return toAnchors(out, false);
   }
-  return { overlapArea: overlapArea, MECH: MECH, flatPart: flatPart, crankPart: crankPart, pinPart: pinPart, sleevePart: sleevePart, capsulePoly: capsulePoly, circlePoly: circlePoly, FAN_DEF: FAN_DEF, fanCfg: fanCfg, fanSim: fanSim, fanOptimize: fanOptimize, fanBladeMass: fanBladeMass, fanStations: fanStations, wheelRingPts: function (P, n) { var W = wheelCfg(P); return ringPts(W, 0, n || 8); }, oringGeom: oringGeom, build: build, stl: stl, zip: zip, HUB_H: HUB_H, WHEEL_DEF: WHEEL_DEF, wheelCfg: wheelCfg, SOCK_DEF: SOCK_DEF, sockCfg: sockCfg, sockOutline: sockOutline, sockMax: sockMax, catmull: catmull, bezier: bezier, toAnchors: toAnchors, normAnchors: normAnchors, legPreview: legPreview, samplePath: samplePath };
+  return { SPRING_DEF: SPRING_DEF, SPRING_MAT: SPRING_MAT, springCfg: springCfg, overlapArea: overlapArea, MECH: MECH, flatPart: flatPart, crankPart: crankPart, pinPart: pinPart, sleevePart: sleevePart, capsulePoly: capsulePoly, circlePoly: circlePoly, FAN_DEF: FAN_DEF, fanCfg: fanCfg, fanSim: fanSim, fanOptimize: fanOptimize, fanBladeMass: fanBladeMass, fanStations: fanStations, wheelRingPts: function (P, n) { var W = wheelCfg(P); return ringPts(W, 0, n || 8); }, oringGeom: oringGeom, build: build, stl: stl, zip: zip, HUB_H: HUB_H, WHEEL_DEF: WHEEL_DEF, wheelCfg: wheelCfg, SOCK_DEF: SOCK_DEF, sockCfg: sockCfg, sockOutline: sockOutline, sockMax: sockMax, catmull: catmull, bezier: bezier, toAnchors: toAnchors, normAnchors: normAnchors, legPreview: legPreview, samplePath: samplePath };
 })();
 
 
@@ -1862,7 +1956,7 @@ var LegGeom = (function () {
   // ================= Parameter =================
   var FORMS=[['bogen','Bogen'],['s','S-Kurve'],['spirale','Spirale'],['zickzack','Zickzack'],['welle','Welle'],['feder','Feder'],['eigene','Eigene Kurve']];
   var FEET=[['keine','Kein Fuß'],['kugel','Kugel'],['platte','Platte'],['kralle','Kralle'],['kamm','Kamm'],['haken','Haken'],['kufe','Kufe'],['eigene','Eigener Fuß']];
-  var BASE={form:'bogen',length:50,bend:200,width:2.6,taper:1,count:1,spread:360,uneven:0,mirror:false,grip:true,footType:'keine',foot:10,robot:null,part:'bein',wheel:clone(LegGeom.WHEEL_DEF),fan:clone(LegGeom.FAN_DEF),legH:6,hubR:6.6,mount:'innen',gripCfg:{shape:'eckig',side:'aussen',pitch:2.6,len:1.3,depth:0.75,rev:false},sock:clone(LegGeom.SOCK_DEF),
+  var BASE={form:'bogen',length:50,bend:200,width:2.6,taper:1,count:1,spread:360,uneven:0,mirror:false,grip:true,footType:'keine',foot:10,spring:clone(LegGeom.SPRING_DEF),robot:null,part:'bein',wheel:clone(LegGeom.WHEEL_DEF),fan:clone(LegGeom.FAN_DEF),legH:6,hubR:6.6,mount:'innen',gripCfg:{shape:'eckig',side:'aussen',pitch:2.6,len:1.3,depth:0.75,rev:false},sock:clone(LegGeom.SOCK_DEF),
     path:LegGeom.toAnchors([[0,0],[-9,-8],[-15,-20],[-9,-31],[3,-34]],false), footShape:LegGeom.toAnchors([[-7,0],[-6,4],[0,6.5],[6,4],[7,0],[0,-2]],true)};
   var DEF_PATH=clone(BASE.path), DEF_FOOT=clone(BASE.footShape);
   var PRESETS=[
@@ -1879,7 +1973,7 @@ var LegGeom = (function () {
   var P=clone(BASE), res=null, preset='Original-C', mode='model', tool=null, sel=-1, downloads=null;
   function mirrored(){ return P.mount!=='gleich'; }
   var GRIP_DEF={shape:'eckig',side:'aussen',pitch:2.6,len:1.3,depth:0.75,rev:false};
-  function normP(o){ o.robot=roboNorm(o.robot); o.part=o.part||'bein'; o.wheel=LegGeom.wheelCfg(o); o.fan=LegGeom.fanCfg(o); o.gripCfg=Object.assign({},GRIP_DEF,o.gripCfg||{}); if(!o.mount) o.mount='innen'; o.sock=LegGeom.sockCfg(o); delete o.pairMirror;  o.path=LegGeom.normAnchors(o.path,false); o.footShape=LegGeom.normAnchors(o.footShape,true); return o; }
+  function normP(o){ o.spring=LegGeom.springCfg(o); o.robot=roboNorm(o.robot); o.part=o.part||'bein'; o.wheel=LegGeom.wheelCfg(o); o.fan=LegGeom.fanCfg(o); o.gripCfg=Object.assign({},GRIP_DEF,o.gripCfg||{}); if(!o.mount) o.mount='innen'; o.sock=LegGeom.sockCfg(o); delete o.pairMirror;  o.path=LegGeom.normAnchors(o.path,false); o.footShape=LegGeom.normAnchors(o.footShape,true); return o; }
   function modelParams(){ var M=Object.assign({},P); if(P.form==='spirale') M.length=P.length*0.55+4; return M; }
   if(window.claude&&window.claude.use){ window.claude.use('downloads').then(function(d){downloads=d;}).catch(function(){}); }
 
@@ -1906,7 +2000,7 @@ var LegGeom = (function () {
     P.footType=v; preset=null; sync(); commit();
   });
   chips('presets',PRESETS.map(function(p){return [p[0],p[0]];}),function(v){
-    var p=PRESETS.find(function(x){return x[0]===v;}), keep={part:'bein',fan:Object.assign(clone(LegGeom.FAN_DEF),{rpm:P.fan.rpm,printLimit:P.fan.printLimit}),gripCfg:clone(P.gripCfg),sock:clone(P.sock),mount:P.mount,legH:P.legH,hubR:P.hubR}; P=normP(clone(Object.assign({},BASE,p[1],keep))); preset=v; sel=-1; sync(); commit(); frameSoon();
+    var p=PRESETS.find(function(x){return x[0]===v;}), keep={part:'bein',spring:clone(P.spring),fan:Object.assign(clone(LegGeom.FAN_DEF),{rpm:P.fan.rpm,printLimit:P.fan.printLimit}),gripCfg:clone(P.gripCfg),sock:clone(P.sock),mount:P.mount,legH:P.legH,hubR:P.hubR}; P=normP(clone(Object.assign({},BASE,p[1],keep))); preset=v; sel=-1; sync(); commit(); frameSoon();
   });
   function bendText(v){
     if(P.form==='bogen'||P.form==='s'||P.form==='spirale') return nf(v,0)+' °';
@@ -1996,6 +2090,34 @@ var LegGeom = (function () {
     x.strokeStyle=css('--muted'); x.lineWidth=1*d; x.beginPath(); x.moveTo(cx,cy+hubR*sc); x.lineTo(cx,H); x.stroke();
     x.fillStyle=css('--muted'); x.font=(11*d)+'px "IBM Plex Sans",sans-serif'; x.textBaseline='bottom'; x.fillText('Bein ↓',cx+5*d,H-2*d);
     x.textBaseline='top'; x.fillText('Wand '+nf(Math.max(0,hubR-0.4-R0-s.chamfer),1)+' mm',4*d,2*d);
+  }
+  // ----- Feder -----
+  var SPTYPES=[['zickzack','Zickzack'],['maeander','Mäander'],['bogen','Bogen'],['doppel','Doppelbogen'],['ring','Ring']];
+  var SPDESC={zickzack:'Klassische Zickzack-Feder: weich, federt deutlich ein. Mehr Windungen und mehr Ausschlag machen sie weicher.',
+    maeander:'Mäander: eng gefaltete Stege, sehr weich auf kleinem Raum. Zwischen den Stegen muss ein Spalt zum Drucken bleiben.',
+    bogen:'Ein seitlicher Bogen, wie eine Blattfeder. Mittelweich, robust und leicht zu drucken.',
+    doppelbogen:'',doppel:'Zwei gegenüberliegende Bögen (Rautenfeder): doppelt so steif wie ein Bogen, dafür symmetrisch und stabil.',
+    ring:'Ein Ring im Bein: steif, federt nur wenig, gut gegen harte Stöße. Der Ausschlag ist der Ringradius.'};
+  chips('spTypes',SPTYPES,function(v){ P.spring.type=v; P.spring.on=true; preset=null; sync(); commit(); });
+  chips('spMats',[['pla','PLA'],['petg','PETG'],['tpu','TPU 95A']],function(v){ P.spring.mat=v; sync(); commit(); });
+  $('spOn').addEventListener('change',function(){ P.spring.on=this.checked; preset=null; sync(); commit(); });
+  var SPSL={spPos:['pos',function(v){return nf(v,0)+' %';}],spLen:['len',function(v){return nf(v,0)+' %';}],spN:['n',function(v){return String(v);}],spAmp:['amp',function(v){return nf(v,1)+' mm';}],spTb:['tb',function(v){return nf(v,1)+' mm';}],spMass:['mass',function(v){return nf(v,0)+' g';}]};
+  Object.keys(SPSL).forEach(function(id){
+    $(id).addEventListener('input',function(){ P.spring[SPSL[id][0]]=parseFloat(this.value); if(id!=='spMass') P.spring.on=true; preset=null; sync(); });
+    $(id).addEventListener('change',commit);
+  });
+  function syncSpring(){
+    var sp=P.spring;
+    Object.keys(SPSL).forEach(function(id){ var k=SPSL[id][0]; $(id).value=sp[k]; $(id+'Out').textContent=SPSL[id][1](sp[k]); });
+    $('spOn').checked=!!sp.on; mark('spTypes',sp.type); mark('spMats',sp.mat); $('spDesc').textContent=SPDESC[sp.type]||'';
+    $('rowSpN').hidden=!(sp.type==='zickzack'||sp.type==='maeander'); $('spAmpLbl').textContent=sp.type==='ring'?'Ringradius':'Ausschlag';
+    $('spBody').style.opacity=sp.on?'1':'0.5';
+    var g=$('spStats'); g.innerHTML='';
+    var st=res&&res.spring;
+    if(!sp.on||!st){ $('spNote').textContent=sp.on?'Das Bein ist zu kurz für eine Feder an dieser Stelle.':''; return; }
+    var rows=[[nf(st.k,st.k<10?2:1)+' N/mm','Federrate'],[nf(st.defl,2)+' mm','Einfedern im Stand'],[nf(st.dyn,2)+' mm','Einfedern beim Auftreten'],[nf(st.sigma,1)+' MPa','Spannung'],[nf(Math.min(st.safety,99),1)+'×','Sicherheit'],[st.gap!=null?nf(st.gap,2)+' mm':'–','Spalt (Mäander)']];
+    rows.forEach(function(c){ var d=el('div'); d.appendChild(el('b','',c[0])); d.appendChild(el('span','',c[1])); g.appendChild(d); });
+    $('spNote').textContent=(st.safety<1?'Zu hoch belastet: Die Feder kann brechen. ':st.safety<2?'Knapp: Für viele Schritte lieber etwas dicker machen. ':'Hält die Belastung gut aus. ')+(st.dyn<0.2?'Die Feder ist sehr steif und federt kaum. ':st.dyn>4?'Sehr weich: Der Roboter sackt deutlich ein. ':'')+'Grobe Schätzung: Last entlang der Feder, '+st.mat+', zwei Beine tragen das Gewicht, beim Auftreten doppelte Last. '+(sp.mat==='tpu'?'TPU-Teile müssen komplett aus TPU gedruckt werden.':'PLA-Federn können sich mit der Zeit leicht verformen (Kriechen), PETG ist dafür besser.');
   }
   // ----- Grip-Rippen -----
   var GSHAPES=[['eckig','Eckig'],['rund','Rund'],['spitz','Spitz'],['saege','Sägezahn']], GSIDES=[['aussen','Außen'],['innen','Innen'],['beide','Beidseitig']];
@@ -2167,7 +2289,7 @@ var LegGeom = (function () {
     if(mode==='sketchSpoke'&&(P.part!=='rad'||P.wheel.style!=='eigene')) setMode('model');
     if(mode==='sketchRim'&&(P.part!=='rad'||P.wheel.shape!=='eigene'||P.wheel.oring)) setMode('model');
     if((mode==='sketchLeg'||mode==='sketchFoot')&&P.part==='rad') setMode('model');
-    syncPart(); syncSock(); syncGrip(); syncSketchTools(); renderTree(); exportSummary();
+    syncPart(); syncSock(); syncGrip(); if(!$('dialog').hidden&&tool==='spring') syncSpring(); syncSketchTools(); renderTree(); exportSummary();
     $('docTitle').textContent=fname();
     scheduleOutline();
   }
@@ -2184,6 +2306,7 @@ var LegGeom = (function () {
     fan:'<svg viewBox="0 0 16 16"><path d="M8 8C7 4.5 7.5 2 10 2c1.6 0 1.6 3-2 6zM8 8c3.5-.5 5.6.6 5 3-.6 1.6-3 1-5-3zM8 8c-1.8 3-4.6 4-5.6 2.2C1.3 8.6 3.6 7.4 8 8z" fill="var(--accent)"/></svg>',
     oring:'<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.6" fill="none" stroke="var(--ink)" stroke-width="2.4"/><circle cx="8" cy="8" r="3.6" fill="none" stroke="var(--part)" stroke-width="1.2"/></svg>',
     wheel:'<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="var(--accent)" stroke-width="1.8"/><path d="M8 2v12M2.8 5l10.4 6M2.8 11l10.4-6" stroke="var(--accent)" stroke-width="1.2"/></svg>',
+    spring:'<svg viewBox="0 0 16 16"><path d="M8 1v3l-4 1.5 8 2-8 2 8 2-4 1.5V15" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linejoin="round"/></svg>',
     lock:'<svg class="lock" viewBox="0 0 16 16" width="12" height="12"><rect x="3.5" y="7" width="9" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>'
   };
   function renderTree(){
@@ -2205,6 +2328,7 @@ var LegGeom = (function () {
       ['sub',ICON.hub,'Motoraufnahme',sockLabel(),'sockMotor'],
       ['sub',ICON.leg,'Beine',FORMNAME[P.form],P.form==='eigene'?'sketchLeg':'form'],
       ['sub',ICON.pat,'Anordnung',P.count+(P.count>1?(P.spread>=360?' × rundum':' × '+P.spread+' °'):' Bein'),'pattern'],
+      ['sub',ICON.spring,'Feder',P.spring.on?({zickzack:'Zickzack',maeander:'Mäander',bogen:'Bogen',doppel:'Doppelbogen',ring:'Ring'}[P.spring.type]||''):'keine','spring'],
       ['sub',ICON.grip,'Grip-Rippen',P.grip?GSHAPENAME[P.gripCfg.shape]+' · '+GSIDENAME[P.gripCfg.side]:'aus','grip'],
       ['sub',ICON.foot,'Fuß',FOOTNAME[P.footType],P.footType==='eigene'?'sketchFoot':'foot'],
       ['sub',ICON.pair,'Paar',$('pair').checked?(MOUNTNAME[P.mount]):'aus','print']
@@ -2222,14 +2346,14 @@ var LegGeom = (function () {
   if(window.innerWidth<820){ $('browser').classList.add('collapsed'); $('browserToggle').setAttribute('aria-expanded','false'); $('browserToggle').style.transform='rotate(-90deg)'; }
 
   // ================= Dialoge =================
-  var TITLES={pathSyn:'Bahn vorgeben',mechType:'Mechanik',mechRobot:'Aufbau',mechExport:'Teile exportieren',sendTutor:'An Tutor senden',mySubs:'Meine Einsendungen',sockMotor:'Motor',sockShape:'Wellenform',sockFit:'Passung',sockHub:'Nabe',sockAlign:'Ausrichtung',oring:'O-Ring-Reifen',fan:'Rotor',wheel:'Felge',grip:'Grip-Rippen',socket:'Motoraufnahme',tpl:'Vorlagen',form:'Beinform',foot:'Fuß',pattern:'Anordnung',print:'Druck',export:'STL exportieren',sketch:'Skizzenpalette'};
+  var TITLES={spring:'Feder',pathSyn:'Bahn vorgeben',mechType:'Mechanik',mechRobot:'Aufbau',mechExport:'Teile exportieren',sendTutor:'An Tutor senden',mySubs:'Meine Einsendungen',sockMotor:'Motor',sockShape:'Wellenform',sockFit:'Passung',sockHub:'Nabe',sockAlign:'Ausrichtung',oring:'O-Ring-Reifen',fan:'Rotor',wheel:'Felge',grip:'Grip-Rippen',socket:'Motoraufnahme',tpl:'Vorlagen',form:'Beinform',foot:'Fuß',pattern:'Anordnung',print:'Druck',export:'STL exportieren',sketch:'Skizzenpalette'};
   var snap=null;
   function showPanel(id){
     Array.prototype.forEach.call(document.querySelectorAll('[data-panel]'),function(p){ p.hidden=p.dataset.panel!==id; });
     $('dlgTitle').textContent=(id==='grip'&&P.part==='rad')?'Reifenprofil':TITLES[id]; $('dialog').hidden=false; work.classList.add('dlg');
     $('dfoot').hidden=id==='export'||id==='tpl'||id==='sendTutor'||id==='mySubs';
     setExportPreview(id==='export'); if(id==='export'){ $('pair2').checked=$('pair').checked; }
-    if(id==='pathSyn') syncSyn();
+    if(id==='pathSyn') syncSyn(); if(id==='spring') syncSpring();
     if(id==='mechType') renderMechSliders(); if(id==='mechExport') renderMechParts();
     if(id==='sendTutor') renderSend(); if(id==='mySubs') renderMySubs();
     $('dlgOk').textContent=id==='sketch'?'Skizze beenden':'OK';
@@ -2315,7 +2439,7 @@ var LegGeom = (function () {
   function scheduleOutline(){ if(outlinePending) return; outlinePending=true; requestAnimationFrame(function(){ outlinePending=false; rebuildOutline(); }); }
   function rebuildOutline(){
     try{ res=LegGeom.build(modelParams(),false); }catch(e){ res={error:true,warnings:[]}; }
-    computeWalk(); updateInfo(); queueMesh(); if(P.part==='fan') runSim();
+    computeWalk(); updateInfo(); queueMesh(); if(P.part==='fan') runSim(); if(tool==='spring'&&!$('dialog').hidden) syncSpring();
   }
   function updateInfo(){
     var w=$('warn');
@@ -2471,7 +2595,7 @@ var LegGeom = (function () {
     C.camera.position.set(dx/l*7,dy/l*7,dz/l*7); C.camera.lookAt(0,0,0); C.renderer.render(C.scene,C.camera);
   }
   function placeSim(){ var w=$('simPanel'); if(w.hidden) return; if(window.innerWidth<820){ w.style.top=''; w.style.maxHeight=''; return; } var b=$('browser'), t=b.offsetTop+b.offsetHeight+10; w.style.top=t+'px'; w.style.maxHeight=Math.max(200,work.clientHeight-t-70)+'px'; }
-  function placeWalk(){ placeSim(); var w=$('walk'); if(w.hidden) return; if(window.innerWidth<820){ w.style.top=''; return; } var b=$('browser'); w.style.top=(b.offsetTop+b.offsetHeight+10)+'px'; }
+  function placeWalk(){ placeSim(); var w=$('walk'); if(w.hidden) return; if(window.innerWidth<820){ w.style.top=''; w.style.maxHeight=''; return; } var b=$('browser'), t=b.offsetTop+b.offsetHeight+10; w.style.top=t+'px'; w.style.maxHeight=Math.max(220,work.clientHeight-t-70)+'px'; w.style.overflow='auto'; }
   function placeCube(){ var dlg=!$('dialog').hidden&&window.innerWidth>=820; $('cube').style.right=(dlg?342:10)+'px'; $('busy').style.right=(dlg?446:120)+'px'; }
 
   // ----- Steuerung im Viewport -----
@@ -2776,7 +2900,7 @@ var LegGeom = (function () {
   }
 
   // ================= Probelauf =================
-  var walkData=null, walkK=0, walkX=0, walkSpeed=0.3, walkPlay=!window.matchMedia('(prefers-reduced-motion: reduce)').matches, N=720;
+  var walkData=null, walkK=0, walkX=0, walkSpeed=0.3, walkRpm=150, walkFactor=0.1, walkPlay=!window.matchMedia('(prefers-reduced-motion: reduce)').matches, N=720;
   function computeWalk(){
     walkData=null; if(!res||!res.outerPath) return;
     var O=res.rollPath||res.outerPath, M=O.map(function(p){return [-p[0],p[1]];}), A=P.mount==='innen'?M:O, B=A;
@@ -2789,12 +2913,13 @@ var LegGeom = (function () {
     var mn=Math.min.apply(null,hA), mx=Math.max.apply(null,hA);
     if(res.rollRound){ var rr=res.rollRound; h=h.map(function(){return rr;}); cx=cx.map(function(){return 0;}); mn=mx=rr; }
     walkData={h:h,cx:cx,hopA:mx-mn,min:Math.min.apply(null,h),max:Math.max.apply(null,h)};
+    setTimeout(renderWalkStats,0);
   }
   function low(pts,c,s){ var my=1e9,mx=0; for(var i=0;i<pts.length;i++){ var y=pts[i][0]*s+pts[i][1]*c; if(y<my){ my=y; mx=pts[i][0]*c-pts[i][1]*s; } } return {y:my,x:mx}; }
   function stepWalk(dt){
     if(!walkData||!R.ok) return;
     if(walkPlay){
-      var adv=walkSpeed*dt*N, k0=Math.floor(walkK); walkK+=adv; var k1=Math.floor(walkK);
+      var adv=walkRpm/60*walkFactor*dt*N, k0=Math.floor(walkK); walkK+=adv; var k1=Math.floor(walkK);
       for(var k=k0;k<k1;k++){ walkX+=walkData.h[k%N]*2*Math.PI/N; }   // Abrollen um den Bodenpunkt: Weg = Achshöhe × Drehwinkel
     }
     var i=Math.floor(walkK)%N, hub=walkData.h[i], ang=-2*Math.PI*(walkK%N)/N;
@@ -2805,6 +2930,7 @@ var LegGeom = (function () {
     orbit.tx=walkX; if(goal) goal.tx=walkX;
   }
   function drawWalkGraph(){
+    var pe=$('walkPos'); if(pe) pe.textContent=Math.round((walkK%N)/N*360)+'°';
     var c=$('walkGraph'), r=c.getBoundingClientRect(); if(!r.width||!walkData) return;
     var d=Math.min(window.devicePixelRatio||1,2); if(c.width!==Math.round(r.width*d)){ c.width=Math.round(r.width*d); c.height=Math.round(r.height*d); }
     var x=c.getContext('2d'), W=c.width, H=c.height; x.setTransform(1,0,0,1,0,0); x.clearRect(0,0,W,H);
@@ -2817,11 +2943,34 @@ var LegGeom = (function () {
     x.fillText('Achshöhe '+nf(lo,1)+'–'+nf(hi2,1)+' mm',0,0); x.textBaseline='bottom'; x.fillText('eine Umdrehung',0,H);
     var dist=Math.abs(walkX)/10; x.textAlign='right'; x.fillText(nf(dist,1)+' cm gelaufen',W,H); x.textAlign='left';
   }
-  $('walkPlay').addEventListener('click',function(){ walkPlay=!walkPlay; this.textContent=walkPlay?'Anhalten':'Weiter'; });
-  $('walkSlow').addEventListener('click',function(){ walkSpeed=walkSpeed>0.2?0.1:0.3; this.textContent=walkSpeed>0.2?'Zeitlupe':'Normal'; });
+  // Simulation für Beine und Räder: Wiedergabe, Tempo, Kennwerte
+  function walkIco(){ $('walkPlay').innerHTML=walkPlay?'<svg width="18" height="18" viewBox="0 0 24 24"><path d="M6 5h4v14H6zM14 5h4v14h-4z" fill="currentColor"/></svg>':'<svg width="18" height="18" viewBox="0 0 24 24"><path d="M7 5v14l12-7z" fill="currentColor"/></svg>'; }
+  function walkStepBy(d){ walkPlay=false; walkIco(); var k0=Math.floor(walkK); walkK=Math.max(0,walkK+d*N/24); var k1=Math.floor(walkK);
+    if(d>0&&walkData) for(var k=k0;k<k1;k++) walkX+=walkData.h[k%N]*2*Math.PI/N; else if(walkData) for(var k2=k1;k2<k0;k2++) walkX-=walkData.h[k2%N]*2*Math.PI/N; }
+  $('walkPlay').addEventListener('click',function(){ walkPlay=!walkPlay; walkIco(); });
+  $('walkStep').addEventListener('click',function(){ walkStepBy(1); });
+  $('walkBack').addEventListener('click',function(){ walkStepBy(-1); });
   $('walkReset').addEventListener('click',function(){ walkX=0; walkK=0; });
   $('walkClose').addEventListener('click',function(){ setMode('model'); });
-  $('walkPlay').textContent=walkPlay?'Anhalten':'Weiter';
+  function walkSpdFrom(v){ return 0.01*Math.pow(100,v/100); }
+  function showWalkCtl(){ $('walkRpm').value=walkRpm; $('walkRpmOut').textContent=walkRpm+' U/min'; $('walkSpd').value=Math.round(100*Math.log(walkFactor/0.01)/Math.log(100)); var pct=walkFactor*100; $('walkSpdOut').textContent=(pct<10?nf(pct,1):nf(pct,0))+' %'; }
+  $('walkRpm').addEventListener('input',function(){ walkRpm=+this.value; showWalkCtl(); renderWalkStats(); });
+  $('walkSpd').addEventListener('input',function(){ walkFactor=walkSpdFrom(+this.value); showWalkCtl(); });
+  document.addEventListener('keydown',function(e){ if(mode!=='walk'||(document.activeElement&&/INPUT|TEXTAREA/.test(document.activeElement.tagName))) return;
+    if(e.key===' '){ walkPlay=!walkPlay; walkIco(); e.preventDefault(); } else if(e.key==='ArrowRight') walkStepBy(1); else if(e.key==='ArrowLeft') walkStepBy(-1); });
+  function renderWalkStats(){
+    var g=$('walkStats'); if(!g) return; g.innerHTML=''; if(!walkData){ $('walkVerdict').textContent=''; return; }
+    var h=walkData.h, perRev=0, mean=0; h.forEach(function(v){ perRev+=v*2*Math.PI/N; mean+=v/N; });
+    var sd=0; h.forEach(function(v){ sd+=(v-mean)*(v-mean)/N; }); sd=Math.sqrt(sd);
+    var smooth=Math.max(0,1-sd/Math.max(mean,1e-6)*4), speed=perRev*walkRpm/60/10, hop=walkData.max-walkData.min, clear=walkData.min-11;
+    [[nf(speed,1)+' cm/s','Tempo'],[nf(perRev,0)+' mm','Weg je Umdrehung'],[nf(hop,1)+' mm','Hüpfen'],[nf(smooth*100,0)+' %','Gleichmäßigkeit'],[nf(walkData.min,0)+' mm','Achshöhe min.'],[nf(clear,0)+' mm','Bodenfreiheit Motor']].forEach(function(c){
+      var d=el('div'); d.appendChild(el('b','',c[0])); d.appendChild(el('span','',c[1])); g.appendChild(d); });
+    var t=clear<0?'Der Motor schleift am Boden: Die Teile sind zu klein für den TT-Motor. Größer machen oder einen flacheren Körper verwenden.':
+      hop>8?'Der Roboter hüpft stark ('+nf(hop,0)+' mm). Mehr Beine, gleichmäßigere Form oder ein runderes Rad helfen.':
+      smooth<0.6?'Der Gang ist ungleichmäßig: Der Roboter wird mal schneller, mal langsamer.':'Läuft gut! Bei '+walkRpm+' U/min schafft er etwa '+nf(speed*0.6,1)+' m pro Minute.';
+    $('walkVerdict').textContent=t+' Vereinfachte Simulation: starrer Körper auf ebenem Boden, ohne Rutschen.';
+  }
+  walkIco(); showWalkCtl();
 
   // ================= Export =================
   function fname(){ var n=($('fname').value||'mein-bein').trim().toLowerCase().replace(/[^a-z0-9äöüß_-]+/g,'-').replace(/^-+|-+$/g,''); return n||'mein-bein'; }
